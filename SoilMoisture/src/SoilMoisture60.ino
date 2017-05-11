@@ -55,7 +55,7 @@ void loop() {
   digitalWrite(aled, LOW);
 
   // Wait 10 seconds for the sake of debugging...
-  delay(10000);
+  delay(60000);
 
   // And repeat!
 }
