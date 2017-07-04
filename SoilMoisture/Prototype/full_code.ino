@@ -83,7 +83,9 @@ void setup() {
 
 
 void loop() {
-
+  if (Particle.connected()) {
+    Particle.publish("Run Start", "Preparing to Poll", PRIVATE);
+  }
   time_t time = Time.now();
   String timestamp =  String(Time.timeStr());
   // here we will start the process by turning on the indicator LED (aLED)
@@ -114,9 +116,6 @@ void loop() {
 
         }
   }
-  else {
-      Particle.publish("S1_Reading_Data", "No Probe Attached", PRIVATE);
-  }
   delay(1000);
 
   int SMVolts2 = analogRead(as1);
@@ -129,9 +128,6 @@ void loop() {
         else {
 
         }
-  }
-  else {
-      Particle.publish("S2_Reading_Data", "No Probe Attached", PRIVATE);
   }
   delay(1000);
 
@@ -146,9 +142,6 @@ void loop() {
 
         }
   }
-  else {
-      Particle.publish("S3_Reading_Data", "No Probe Attached", PRIVATE);
-  }
   delay(1000);
 
   int SMVolts4 = analogRead(as3);
@@ -161,9 +154,6 @@ void loop() {
         else {
 
         }
-  }
-  else {
-      Particle.publish("S4_Reading_Data", "No Probe Attached", PRIVATE);
   }
   delay(1000);
 
@@ -178,9 +168,6 @@ void loop() {
 
         }
   }
-  else {
-      Particle.publish("S5_Reading_Data", "No Probe Attached", PRIVATE);
-  }
   delay(1000);
 
   int SMVolts6 = analogRead(as5);
@@ -193,9 +180,6 @@ void loop() {
         else {
 
         }
-  }
-  else {
-      Particle.publish("S6_Reading_Data", "No Probe Attached", PRIVATE);
   }
   delay(1000);
 
@@ -210,6 +194,9 @@ void loop() {
   // Turn off the activity LED and then
   // wait 10 seconds for the sake of debugging...
   digitalWrite(aled, LOW);
+  if (Particle.connected()) {
+    Particle.publish("Run End", "Polling complete", PRIVATE);
+  }
   delay(5000);
 
   // And repeat!
