@@ -1,4 +1,4 @@
-
+#include <time.h>
 // ------------
 // Production Soil Moisture Read Code
 // Supports protoype boards with 6 TL-69 sensors
@@ -56,6 +56,9 @@ int as4 = A4;
 int ps5 = D7;
 int as5 = A5;
 
+// these are the various variables used later
+int a;
+
 void setup() {
 
   // Set the LED and power pins to output mode
@@ -81,38 +84,70 @@ void setup() {
 
 void loop() {
 
+  time_t time = Time.now();
   // here we will start the process by turning on the indicator LED (aLED)
   digitalWrite(aled, HIGH);
 
-  for ( a = 0; a < 6; a = a + 1 ) {
 
-    // define the pin # based on the loop
-    strppin = ("ps", a);
-    strapin = ("as", a);
+  // Next we turn on the power to the sensor
+  digitalWrite(ps0, HIGH);
+  digitalWrite(ps1, HIGH);
+  digitalWrite(ps2, HIGH);
+  digitalWrite(ps3, HIGH);
+  digitalWrite(ps4, HIGH);
+  digitalWrite(ps5, HIGH);
 
-    // Next we turn on the power to the sensor
-    digitalWrite(strppin, HIGH);
+  // attempting to read immediately causes funky voltages so we will wait for 2
+  // seconds before we poll the analog pin
+  delay(2000);
 
-    // attempting to read immediately causes funky voltages so we will wait for 3
-    // seconds before we poll the analog pin
-    delay(3000);
-
-    // Now we will pull the votage value from the probe
-    int SMVolts = analogRead(strapin);
-
-    // and use the particle.publish event trigger to see what the value is via the
-    // particle build console - you can also get this from the terminal with a long
-    // command that the console shows you which is cool
-    Particle.publish("SoilVoltsAlpha", String(SMVolts));
-
-    // Then we'll turn it off...
-    digitalWrite(strppin, LOW);
+  // Now we will pull the votage value from the probe
+  int SMVolts1 = analogRead(as0);
+  if (Particle.connected()) {
+    Particle.publish(String(SMVolts1), Time.timeStr());
   }
+  else {
+
+  }
+  delay(1000);
+
+  int SMVolts2 = analogRead(as1);
+  Particle.publish("Soil_Volts_S1", String(SMVolts2));
+  delay(1000);
+
+
+  int SMVolts3 = analogRead(as2);
+  Particle.publish("Soil_Volts_S2", String(SMVolts3));
+  delay(1000);
+
+
+  int SMVolts4 = analogRead(as3);
+  Particle.publish("Soil_Volts_S3", String(SMVolts4));
+  delay(1000);
+
+
+  int SMVolts5 = analogRead(as4);
+  Particle.publish("Soil_Volts_S4", String(SMVolts5));
+  delay(1000);
+
+
+  int SMVolts6 = analogRead(as5);
+  Particle.publish("Soil_Volts_S5", String(SMVolts6));
+  delay(1000);
+
+
+  // Then we'll turn it off...
+  digitalWrite(ps0, LOW);
+  digitalWrite(ps1, LOW);
+  digitalWrite(ps2, LOW);
+  digitalWrite(ps3, LOW);
+  digitalWrite(ps4, LOW);
+  digitalWrite(ps5, LOW);
 
   // Turn off the activity LED and then
   // wait 10 seconds for the sake of debugging...
   digitalWrite(aled, LOW);
-  delay(60000);
+  delay(5000);
 
   // And repeat!
 }
