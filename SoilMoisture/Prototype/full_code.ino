@@ -85,6 +85,7 @@ void setup() {
 void loop() {
 
   time_t time = Time.now();
+  String timestamp =  String(Time.timeStr());
   // here we will start the process by turning on the indicator LED (aLED)
   digitalWrite(aled, HIGH);
 
@@ -103,38 +104,100 @@ void loop() {
 
   // Now we will pull the votage value from the probe
   int SMVolts1 = analogRead(as0);
-  if (Particle.connected()) {
-    Particle.publish(String(SMVolts1), Time.timeStr());
+  if (SMVolts1 < 4000) {
+    String voltage = "Voltage " + String(SMVolts1);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S1_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
+
+        }
   }
   else {
-
+      Particle.publish("S1_Reading_Data", "No Probe Attached", PRIVATE);
   }
   delay(1000);
 
   int SMVolts2 = analogRead(as1);
-  Particle.publish("Soil_Volts_S1", String(SMVolts2));
-  delay(1000);
+  if (SMVolts2 < 4000) {
+    String voltage = "Voltage " + String(SMVolts2);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S2_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
 
+        }
+  }
+  else {
+      Particle.publish("S2_Reading_Data", "No Probe Attached", PRIVATE);
+  }
+  delay(1000);
 
   int SMVolts3 = analogRead(as2);
-  Particle.publish("Soil_Volts_S2", String(SMVolts3));
-  delay(1000);
+  if (SMVolts3 < 4000) {
+    String voltage = "Voltage " + String(SMVolts3);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S3_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
 
+        }
+  }
+  else {
+      Particle.publish("S3_Reading_Data", "No Probe Attached", PRIVATE);
+  }
+  delay(1000);
 
   int SMVolts4 = analogRead(as3);
-  Particle.publish("Soil_Volts_S3", String(SMVolts4));
-  delay(1000);
+  if (SMVolts4 < 4000) {
+    String voltage = "Voltage " + String(SMVolts4);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S4_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
 
+        }
+  }
+  else {
+      Particle.publish("S4_Reading_Data", "No Probe Attached", PRIVATE);
+  }
+  delay(1000);
 
   int SMVolts5 = analogRead(as4);
-  Particle.publish("Soil_Volts_S4", String(SMVolts5));
-  delay(1000);
+  if (SMVolts5 < 4000) {
+    String voltage = "Voltage " + String(SMVolts5);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S5_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
 
+        }
+  }
+  else {
+      Particle.publish("S5_Reading_Data", "No Probe Attached", PRIVATE);
+  }
+  delay(1000);
 
   int SMVolts6 = analogRead(as5);
-  Particle.publish("Soil_Volts_S5", String(SMVolts6));
-  delay(1000);
+  if (SMVolts6 < 4000) {
+    String voltage = "Voltage " + String(SMVolts6);
+    String publishdata = timestamp + " " + voltage;
+        if (Particle.connected()) {
+          Particle.publish("S6_Reading_Data", publishdata, PRIVATE);
+        }
+        else {
 
+        }
+  }
+  else {
+      Particle.publish("S6_Reading_Data", "No Probe Attached", PRIVATE);
+  }
+  delay(1000);
 
   // Then we'll turn it off...
   digitalWrite(ps0, LOW);
