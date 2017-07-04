@@ -28,8 +28,8 @@ store the data in an array until the next connectivity cycle)
 int aled = D4; // this is the activity LED (aled) - it comes on when a sensor is sampling
 int pled = D5; // This LED will come on when the power is on and the code loads
 
-// Since this is my prototypw the pin to sensor mapping kinda sucks because
-// I have ever designed a PCB before, but this is what happens when you marry
+// Since this is my prototype the pin to sensor mapping kinda sucks because
+// I have never designed a PCB before, but this is what happens when you marry
 // hardware and software
 
 // These are the pins for S0
@@ -62,43 +62,56 @@ void setup() {
   // It's important you do this here, inside the setup() function rather than
   // outside it or in the loop function.
 
-  pinMode(aled, OUTPUT);
-  pinMode(ppin0, OUTPUT);
   pinMode(pled, OUTPUT);
+  pinMode(aled, OUTPUT);
+  pinMode(ps0, OUTPUT);
+  pinMode(ps1, OUTPUT);
+  pinMode(ps2, OUTPUT);
+  pinMode(ps3, OUTPUT);
+  pinMode(ps4, OUTPUT);
+  pinMode(ps5, OUTPUT);
   digitalWrite(pled, HIGH);
 
-  // read in a code snipit note that you DO NOT DO THIS: pinMode(arpin, INPUT);
+  // read in a code snipit note that you DO NOT DO THIS: pinMode(as0, INPUT);
 
 }
 
-// Next we have the loop function, the other essential part of a microcontroller program.
+// Next we have the loop function, the other essential part of the program.
 
 
 void loop() {
+
   // here we will start the process by turning on the indicator LED (aLED)
   digitalWrite(aled, HIGH);
 
+  for ( a = 0; a < 6; a = a + 1 ) {
 
-  // Next we turn on the power to the sensor
-  digitalWrite(ppin0, HIGH);
+    // define the pin # based on the loop
+    strppin = ("ps", a);
+    strapin = ("as", a);
 
-  // attempting to read immediately causes funky voltages so we will wait for 3
-  // seconds before we poll the analog pin
-  delay(3000);
+    // Next we turn on the power to the sensor
+    digitalWrite(strppin, HIGH);
 
-  // Now we will pull the votage value from the probe
-  int SMVolts = analogRead(arpin);
+    // attempting to read immediately causes funky voltages so we will wait for 3
+    // seconds before we poll the analog pin
+    delay(3000);
 
-  // and use the particle.publish event trigger to see what the value is via the
-  // particle build console - you can also get this from the terminal with a long
-  // command that the console shows you which is cool
-  Particle.publish("SoilVoltsAlpha", String(SMVolts));
+    // Now we will pull the votage value from the probe
+    int SMVolts = analogRead(strapin);
 
-  // Then we'll turn it off...
-  digitalWrite(ppin0, LOW);
+    // and use the particle.publish event trigger to see what the value is via the
+    // particle build console - you can also get this from the terminal with a long
+    // command that the console shows you which is cool
+    Particle.publish("SoilVoltsAlpha", String(SMVolts));
+
+    // Then we'll turn it off...
+    digitalWrite(strppin, LOW);
+  }
+
+  // Turn off the activity LED and then
+  // wait 10 seconds for the sake of debugging...
   digitalWrite(aled, LOW);
-
-  // Wait 10 seconds for the sake of debugging...
   delay(60000);
 
   // And repeat!
