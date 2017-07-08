@@ -24,6 +24,8 @@ store the data in an array until the next connectivity cycle)
 
 5) sleep for some amount of time and then redo 1 through 5!
 -------------*/
+STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
+
 
 int aled = D4; // this is the activity LED (aled) - it comes on when a sensor is sampling
 int pled = D5; // This LED will come on when the power is on and the code loads
@@ -58,6 +60,7 @@ int as5 = A5;
 
 // these are the various variables used later
 int a;
+retained int loops;
 
 void setup() {
 
@@ -76,6 +79,13 @@ void setup() {
   digitalWrite(pled, HIGH);
 
   // read in a code snipit note that you DO NOT DO THIS: pinMode(as0, INPUT);
+  if (loops > 0); {
+    if (Particle.connected()) {
+
+      loops = 0;
+    }
+    Particle.publish("Loop Counter", String(loops), PRIVATE);
+  }
 
 }
 
@@ -90,6 +100,9 @@ void loop() {
   String timestamp =  String(Time.timeStr());
   // here we will start the process by turning on the indicator LED (aLED)
   digitalWrite(aled, HIGH);
+  if (Particle.connected()) {
+    Particle.publish("Loop Counter", String(loops), PRIVATE);
+  }
 
 
   // Next we turn on the power to the sensor
@@ -193,9 +206,11 @@ void loop() {
 
   // Turn off the activity LED and then
   // wait 10 seconds for the sake of debugging...
+  loops = loops + 1;
+  String pollingpublish = "Poll completed for loop " + String(loops);
   digitalWrite(aled, LOW);
   if (Particle.connected()) {
-    Particle.publish("Run End", "Polling complete", PRIVATE);
+    Particle.publish("Run End", pollingpublish, PRIVATE);
   }
   delay(5000);
 
