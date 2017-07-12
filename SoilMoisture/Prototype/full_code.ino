@@ -5,64 +5,72 @@
 // ------------
 
 /*-------------
-
 This flash is the "production" code for the EZ-Garden System SM Kit
-
-The flow is simple:
-0) Setup the code and turn on the "Heartbeat LED"
-
-1) Poll the device and check for active probes
-(not-connected probes throw a 0 reading)
-
-2) Check for connectivity to the particle cloud
-(code uses particle.publish to upload data so if it's not connected then it will
-store the data in an array until the next connectivity cycle)
-
-3) Take a reading from all connected probes
-
-4) Either upload or store the results
-
-5) sleep for some amount of time and then redo 1 through 5!
 -------------*/
+
 STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
-
 int aled = D4; // this is the activity LED (aled) - it comes on when a sensor is sampling
-int pled = D5; // This LED will come on when the power is on and the code loads
+int pled = D5; // This LED will come on when the photon is offline from cloud
 
 // Since this is my prototype the pin to sensor mapping kinda sucks because
 // I have never designed a PCB before, but this is what happens when you marry
 // hardware and software
 
-// These are the pins for S0
+// power for S0
 int ps0 = D3;
-int as0 = A0;
 
-// These are the pins for S1
+// power for S1
 int ps1 = D2;
-int as1 = A1;
 
-// These are the pins for S2
+// power S2
 int ps2 = D1;
-int as2 = A2;
 
-// These are the pins for S3
+// power S3
 int ps3 = D0;
-int as3 = A3;
 
-// These are the pins for S4
+// power S4
 int ps4 = D6;
-int as4 = A4;
 
-// These are the pins for S5
+// power S5
 int ps5 = D7;
-int as5 = A5;
 
-// these are the various variables used later
-int a;
+// placeholder for the analog probe reading pins
+int as[6];
+
+// what is this thing called? Set in the "setup" section below
+retained char dev_name[12];
+// these are the various variables used later if the photon is in offline mode
 retained int loops;
+retained char offlinevals[1024];
+retained int16_t globalindex = 0;
+// is the particle online value check
+int onlinechk;
+// set this value to the # of miliseconds between polling intervals
+// easy ref table:
+//
+// 2 hours = 7200000
+// 6 hours = 21600000
+// 12 hours = 43200000
+// 24 = 86400000
+// I would recommend values basd on climate - longer for wet and shorter for
+// hot and dry
+int poll_delay = 10000;
+// this is a simple int variable for loops and counters
+int a = 0;
 
 void setup() {
+
+  // I have 6 analog pins to read for the moisture probes - this tells
+  // the program which pins to use and must match the PCB (this is the map for
+  // the prototype boards)
+  as[0] = A1;
+  as[1] = A2;
+  as[2] = A3;
+  as[3] = A4;
+  as[4] = A5;
+  as[5] = A6;
+
 
   // Set the LED and power pins to output mode
   // It's important you do this here, inside the setup() function rather than
@@ -76,34 +84,64 @@ void setup() {
   pinMode(ps3, OUTPUT);
   pinMode(ps4, OUTPUT);
   pinMode(ps5, OUTPUT);
-  digitalWrite(pled, HIGH);
 
-  // read in a code snipit note that you DO NOT DO THIS: pinMode(as0, INPUT);
-  if (loops > 0); {
-    if (Particle.connected()) {
-
-      loops = 0;
-    }
-    Particle.publish("Loop Counter", String(loops), PRIVATE);
-  }
+  snprintf(dev_name, sizeof(dev_name), "%s", "Tomato_1");
 
 }
 
-// Next we have the loop function, the other essential part of the program.
+void onlinepoll() {
+    // Since the photon is online and connected we can live publish values!
+    // let's blank everything out quick like and cleanup first and then we
+    // can process the polling requests
+    String publishdata = "";
+    //get the time of the readings to be taken first so the timestamp can
+    //be used in later steps
+    time_t time = Time.now();
+    String timestamp =  String(Time.timeStr());
 
 
+    for(a = 0; a < 6; a = a + 1 ) {
+      int SMVolts = analogRead(as[a]);
+        if (SMVolts < 4000) {
+          String voltage = String(SMVolts);
+          String publishdata = publishdata + "S" + a + "::" + timestamp + "::" + voltage + "::";
+
+        }
+        else {
+          String publishdata = publishdata + "S" + a + "::No Sensor discovered!::";
+        }
+    }
+
+    Particle.publish(dev_name, publishdata, PRIVATE);
+}
+
+void offlinepoll() {
+
+
+}
+
+// Next we have the loop function, the main part of the program.
 void loop() {
-  if (Particle.connected()) {
-    Particle.publish("Run Start", "Preparing to Poll", PRIVATE);
-  }
-  time_t time = Time.now();
-  String timestamp =  String(Time.timeStr());
+
   // here we will start the process by turning on the indicator LED (aLED)
   digitalWrite(aled, HIGH);
-  if (Particle.connected()) {
-    Particle.publish("Loop Counter", String(loops), PRIVATE);
-  }
 
+  // check and see if we have polling data stored
+  if (loops > 0); {
+    // if so, then check to see if the photon is online
+    if (Particle.connected()) {
+      //If so, upload the data stored in the offlinevals array for the dashboard
+      snprintf(offlinevals, sizeof(offlinevals), "%s", "data to sprintf");
+      Particle.publish("SMP_Update", offlinevals, PRIVATE);
+      delay(1000);
+      onlinechk = 1;
+      loops = 0;
+    }
+    else {
+      digitalWrite(pled, HIGH);
+      onlinechk = 0;
+    }
+  }
 
   // Next we turn on the power to the sensor
   digitalWrite(ps0, HIGH);
@@ -112,91 +150,19 @@ void loop() {
   digitalWrite(ps3, HIGH);
   digitalWrite(ps4, HIGH);
   digitalWrite(ps5, HIGH);
-
   // attempting to read immediately causes funky voltages so we will wait for 2
   // seconds before we poll the analog pin
   delay(2000);
 
-  // Now we will pull the votage value from the probe
-  int SMVolts1 = analogRead(as0);
-  if (SMVolts1 < 4000) {
-    String voltage = "Voltage " + String(SMVolts1);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S1_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
+//Based on the online check we now poll in either online of offline mode
+  if (onlinechk = 1) {
+    onlinepoll();
   }
-  delay(1000);
-
-  int SMVolts2 = analogRead(as1);
-  if (SMVolts2 < 4000) {
-    String voltage = "Voltage " + String(SMVolts2);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S2_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
+  else {
+    offlinepoll();
   }
-  delay(1000);
 
-  int SMVolts3 = analogRead(as2);
-  if (SMVolts3 < 4000) {
-    String voltage = "Voltage " + String(SMVolts3);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S3_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
-  }
-  delay(1000);
-
-  int SMVolts4 = analogRead(as3);
-  if (SMVolts4 < 4000) {
-    String voltage = "Voltage " + String(SMVolts4);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S4_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
-  }
-  delay(1000);
-
-  int SMVolts5 = analogRead(as4);
-  if (SMVolts5 < 4000) {
-    String voltage = "Voltage " + String(SMVolts5);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S5_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
-  }
-  delay(1000);
-
-  int SMVolts6 = analogRead(as5);
-  if (SMVolts6 < 4000) {
-    String voltage = "Voltage " + String(SMVolts6);
-    String publishdata = timestamp + " " + voltage;
-        if (Particle.connected()) {
-          Particle.publish("S6_Reading_Data", publishdata, PRIVATE);
-        }
-        else {
-
-        }
-  }
-  delay(1000);
-
-  // Then we'll turn it off...
+  // Then we'll turn off the sensor pack
   digitalWrite(ps0, LOW);
   digitalWrite(ps1, LOW);
   digitalWrite(ps2, LOW);
@@ -205,14 +171,10 @@ void loop() {
   digitalWrite(ps5, LOW);
 
   // Turn off the activity LED and then
-  // wait 10 seconds for the sake of debugging...
+  // wait delay seconds for the sake of debugging...
   loops = loops + 1;
-  String pollingpublish = "Poll completed for loop " + String(loops);
   digitalWrite(aled, LOW);
-  if (Particle.connected()) {
-    Particle.publish("Run End", pollingpublish, PRIVATE);
-  }
-  delay(5000);
+  delay(poll_delay);
 
   // And repeat!
 }
