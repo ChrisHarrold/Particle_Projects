@@ -10,22 +10,35 @@ This flash is the "production" code for the EZ-Garden System SM Kit
 
 STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
-int aled = D4; // this is the activity LED (aled) - it comes on when a sensor is sampling
-int pled = D5; // This LED will come on when the photon is offline from cloud
+// this is the activity LED (aled) - it comes on when a sensor is sampling
+int aled = D4;
+// This LED will come on when the photon is offline from cloud
+int pled = D5;
 
-
+// character string definitions for storing results
+char timestamp[25];
+char payload[12];
+char onlinevals[192];
 // placeholder for the analog probe reading pins and digital power pins
 int as[6];
 int ps[6];
 
+
+// the below variables are "retained" meaning that if the photon sleeps or
+// looses main power (not backup on the vbat pin) that they are kept in memory
+// -----------
 // what is this thing called? Set in the "setup" section below
 retained char dev_name[12];
-// these are the various variables used later if the photon is in offline mode
+// these are the various variables used for results collections if the photon
+// is in offline mode
 retained int loops;
-retained char offlinevals[1024];
+retained char offlinevals[254];
 retained int16_t globalindex = 0;
-// is the particle online value check
+
+
+// This is the particle online check value
 int onlinechk;
+
 // this is a simple int variable for loops and counters
 int a = 0;
 
@@ -59,22 +72,23 @@ void setup() {
     pinMode(ps[a], OUTPUT);
   }
 
-  // Change "Tomato_1" to whatever you want the device to be - this will happen
-  // during setup at some point, but it gets manual treatment for now
-  strcpy(dev_name, "Tomato_1");
+  // Change "Tomato_1::" to "whatever::" you want the device to be - this will
+  // happen during setup at some point, but it gets manual treatment for now
+  strcpy(dev_name, "Tomato_1::");
 
 }
 
 void onlinepoll() {
+    // clear out the payload and onlinevals strings since we are live and can
+    // upload them real time we don't need to persist
+    strcpy(onlinevals, dev_name);
+
     // Since the photon is online and connected we can live publish values!
-    // let's blank everything out quick like and cleanup first and then we
-    // can process the polling requests
-    String publishdata = "";
-    //get the time of the readings to be taken first so the timestamp can
-    //be used in later steps
+    // get the time of the readings to be taken first so the timestamp can
+    // be used in later steps and store it in the payload
     time_t time = Time.now();
-    String timestamp =  String(Time.timeStr());
-    publishdata = timestamp + "::";
+    strcpy(timestamp, String(Time.timeStr()) + "::");
+    strcat(onlinevals, timestamp);
 
     // For loop takes a reading from each analog pin and creates the output String
     // to send to the particle.publish function - this will eventually change to
@@ -82,47 +96,53 @@ void onlinepoll() {
     for(a = 0; a < 6; a = a + 1 ) {
       int SMVolts = analogRead(as[a]);
         if (SMVolts < 4000) {
-          String voltage = String(SMVolts);
-          String publishdata = publishdata + "S" + a + "::" + voltage + "::";
-
+          snprintf(payload, sizeof(payload), "S%d::%d::", a, SMVolts);
+          strcat(onlinevals, payload);
         }
         else {
-          String publishdata = publishdata + "S" + a + "::DC::";
+          snprintf(payload, sizeof(payload), "S%d::DC::", a);
+          strcat(onlinevals, payload);
         }
     }
     // Publish the readings to the cloud
-    Particle.publish(dev_name, publishdata, PRIVATE);
+    Particle.publish(dev_name, onlinevals, PRIVATE);
 }
 
 void offlinepoll() {
 
+  if (loops = 0) {
+    // first time the device is offline so start a new offline array of data
+    strcpy(offlinevals, dev_name);
+  }
+  else {
+    if (strlen(offlinevals) > 244) {
+
+    }
+  }
   // Since the photon is offline we have to save the values to upload when
   // we get a connection - same starting cleanup and prep though
-  String publishdata = "";
   time_t time = Time.now();
-  String timestamp =  String(Time.timeStr());
-  publishdata = timestamp + "::";
+  strcpy(timestamp, String(Time.timeStr()) + "::");
+  strcat(offlinevals, timestamp);
 
   // For loop takes a reading from each analog pin and creates the output String
   // to send to the char array for storing until connections resume
   for(a = 0; a < 6; a = a + 1 ) {
     int SMVolts = analogRead(as[a]);
       if (SMVolts < 4000) {
-        String voltage = String(SMVolts);
-        String publishdata = publishdata + "S" + a + "::" + voltage + "::";
+        snprintf(payload, sizeof(payload), "S%d::%d::", a, SMVolts);
+        strcat(offlinevals, payload);
       }
       else {
-        String publishdata = publishdata + "S" + a + "::DC::";
+        snprintf(payload, sizeof(payload), "S%d::DC::", a);
+        strcat(offlinevals, payload);
       }
   }
-  // store the reading in the array
-  snprintf(offlinevals, sizeof(offlinevals), "%s", publishdata);
 }
 
 void update_now() {
 
-  snprintf(offlinevals, sizeof(offlinevals), "%s", "data to sprintf");
-  Particle.publish("SMP_Update", offlinevals, PRIVATE);
+  Particle.publish("Catch_up_update", offlinevals, PRIVATE);
   delay(1000);
 }
 
@@ -168,22 +188,19 @@ void loop() {
     digitalWrite(ps[a], LOW);
   }
 
-  // Turn off the activity LED and then
-  // put the system to sleep for (poll_delay) seconds
-  // defaulted to 10 for the sake of debugging speed...
-  loops = loops + 1;
+  // Turn off the activity LED
   digitalWrite(aled, LOW);
-  // set this value to the # of seconds between polling intervals
+  // set the value in () to the # of seconds between polling intervals
   // easy ref table:
   //
-  // 2 hours = 7200
+  // 2 hours = 7200 <- wouldn't go below this except for VERY dry climates
   // 6 hours = 21600
   // 12 hours = 43200
   // 24 = 86400
   //
   // I would recommend values basd on climate - longer for wet and shorter for
-  // hot and dry - this puts the photon to sleep so it uses less juice
+  // hot and dry - also, this puts the photon to sleep so it uses less juice:
   System.sleep(10);
-
+  loops = loops + 1;
   // And repeat!
 }
