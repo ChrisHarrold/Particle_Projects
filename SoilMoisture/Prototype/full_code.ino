@@ -32,7 +32,10 @@ retained char dev_name[12];
 // these are the various variables used for results collections if the photon
 // is in offline mode
 retained int loops;
-retained char offlinevals[254];
+retained char offlinevals1[254];
+retained char offlinevals2[254];
+retained char offlinevals3[254];
+retained char offlinevals4[254];
 retained int16_t globalindex = 0;
 
 
@@ -93,6 +96,7 @@ void onlinepoll() {
     // For loop takes a reading from each analog pin and creates the output String
     // to send to the particle.publish function - this will eventually change to
     // being sent to the base-station, but for now it's good to see results
+    a = 0;
     for(a = 0; a < 6; a = a + 1 ) {
       int SMVolts = analogRead(as[a]);
         if (SMVolts < 4000) {
@@ -111,38 +115,57 @@ void onlinepoll() {
 void offlinepoll() {
 
   if (loops = 0) {
-    // first time the device is offline so start a new offline array of data
-    strcpy(offlinevals, dev_name);
+    strcpy(offlinevals1, dev_name);
   }
-  else {
-    if (strlen(offlinevals) > 244) {
+  if (loops = 6) {
+    strcpy(offlinevals2, dev_name);
+  }
+  if (loops = 11) {
+    strcpy(offlinevals2, dev_name);
+  }
+  if (loops = 16) {
+    strcpy(offlinevals2, dev_name);
+  }
 
-    }
+
+  if (loops > 0, loops < 6) {
+    strcpy(offlinevals1, dev_name);
   }
+  if (loops > 6, loops <= 12 ) {
+    strcpy(offlinevals2, dev_name);
+  }
+  if (loops > 12, loops <= 18 ) {
+    strcpy(offlinevals3, dev_name);
+  }
+  if (loops > 18, loops <= 24 ) {
+    strcpy(offlinevals4, dev_name);
+  }
+
   // Since the photon is offline we have to save the values to upload when
   // we get a connection - same starting cleanup and prep though
   time_t time = Time.now();
   strcpy(timestamp, String(Time.timeStr()) + "::");
-  strcat(offlinevals, timestamp);
+  strcat(offlinevals1, timestamp);
 
   // For loop takes a reading from each analog pin and creates the output String
   // to send to the char array for storing until connections resume
+  a = 0;
   for(a = 0; a < 6; a = a + 1 ) {
     int SMVolts = analogRead(as[a]);
       if (SMVolts < 4000) {
         snprintf(payload, sizeof(payload), "S%d::%d::", a, SMVolts);
-        strcat(offlinevals, payload);
+        strcat(offlinevals1, payload);
       }
       else {
         snprintf(payload, sizeof(payload), "S%d::DC::", a);
-        strcat(offlinevals, payload);
+        strcat(offlinevals1, payload);
       }
   }
 }
 
 void update_now() {
 
-  Particle.publish("Catch_up_update", offlinevals, PRIVATE);
+  Particle.publish("Catch_up_update", offlinevals1, PRIVATE);
   delay(1000);
 }
 
@@ -200,7 +223,8 @@ void loop() {
   //
   // I would recommend values basd on climate - longer for wet and shorter for
   // hot and dry - also, this puts the photon to sleep so it uses less juice:
-  System.sleep(10);
+  // System.sleep(10);
+  delay(10000);
   loops = loops + 1;
   // And repeat!
 }
