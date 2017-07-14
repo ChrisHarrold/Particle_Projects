@@ -7,4 +7,7 @@ Current Folders:
 
 Hello World - contains simple ino file for blinking LEDs
 
-Soil Moisture - contains simple loop for a single YL-69 Soil moisture probe - good for a quick win and debug
+Soil Moisture - lots of subfolders due to the Particle ADAM offline IDE creating folders all on its own all the damn time...
+  - HelloWorld - duh - it blinks LEDs
+  - SM_Prototype_Code - first prototype code for the soil moisture readings
+  - SoilMoisture - the current codebase for the Photon and Soil Moisture probes
