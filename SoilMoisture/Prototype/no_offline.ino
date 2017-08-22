@@ -145,18 +145,19 @@ void loop() {
   // Choose the application below that makes the most sense for you.
   // system.sleep(xxx) will turn off the bulk of the Particle functions (in particular
   // the wifi module) thus saving battery life or power in general. if you are
-  // running plugged in, a simple delay(xxx) is enough, but YMMV of course
-  // System.sleep(10000);
+  // running plugged in, a simple delay(xxx) is enough, but YMMV of course.
+  // System.sleep(10);
   delay(10000);
   // set the value in () to the # of seconds between polling intervals
   // easy ref table:
   //
-  // 2 hours = 7200 <- wouldn't go below this except for VERY dry climates
-  // or super-specific needs for watering intervals
-  // 6 hours = 21600
-  // 12 hours = 43200
-  // 24 = 86400
+  // Interval  |  Seconds (for System.sleep())  |  miliseconds (for delay())
+  // 2 hours            7200                            7200000
+  // 6 hours            21600                           21600000
+  // 12 hours           43200                           43200000
+  // 24 hours           86400                           86400000
   //
   // I would recommend values basd on climate - longer for wet and shorter for
-  // hot and dry
+  // hot and dry - generally 2 hours is as short as I would go unless you have
+  // very specific watering or moisture tracking needs or wants.
 }
